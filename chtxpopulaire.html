@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Châteauroux Populaire 2027 - Programme de Rupture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'lfi-cyan': '#009fe3',
+                        'lfi-red': '#e30613',
+                        'lfi-dark': '#1a1a1a',
+                        'lfi-grey': '#f2f2f2',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        impact: ['Oswald', 'Arial Black', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'lfi': '10px 10px 0px 0px rgba(0,0,0,1)',
+                        'lfi-red': '10px 10px 0px 0px rgba(227,6,19,1)',
+                        'lfi-cyan': '10px 10px 0px 0px rgba(0,159,227,1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; scroll-behavior: smooth; }
+        .phi-symbol { font-family: serif; font-style: italic; font-weight: bold; }
+        
+        .section-title { font-family: 'Oswald', sans-serif; text-transform: uppercase; line-height: 0.95; }
+        
+        /* LFI Shapes */
+        .lfi-angle-bottom { clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); }
+        .lfi-skew { transform: skewX(-10deg); }
+        .lfi-marker { background: linear-gradient(180deg, rgba(255,255,255,0) 60%, #009fe3 60%); display: inline; }
+        
+        /* Interactive Elements */
+        .card-stat { cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent; }
+        .card-stat:hover { transform: translate(-5px, -5px); box-shadow: 15px 15px 0px 0px rgba(0,0,0,0.1); }
+        .card-stat.active { border: 4px solid white; background: rgba(255,255,255,0.1); }
+
+        #detailed-text-box { transition: all 0.5s ease; max-height: 0; opacity: 0; overflow: hidden; }
+        #detailed-text-box.visible { max-height: 3000px; opacity: 1; margin-top: 2rem; border-top: 4px solid #1a1a1a; }
+
+        #budget-evolution { transition: all 0.8s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; background: #1a1a1a; color: white; margin-top: 2rem; border-top: 8px solid #e30613; }
+        #budget-evolution.visible { max-height: 1500px; opacity: 1; padding: 3rem 1rem; }
+
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 1s ease-out; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        .chart-container { position: relative; height: 350px; width: 100%; }
+        .mini-chart-container { position: relative; height: 180px; width: 100%; margin-top: 1rem; }
+        
+        .highlight-box { border-left: 8px solid #e30613; background: #fef2f2; padding: 1.5rem; }
+
+        /* Styles Section 4 */
+        .check-item { position: relative; padding-left: 2.5rem; cursor: help; transition: all 0.3s; }
+        .check-item::before { content: '✓'; position: absolute; left: 0; top: -2px; color: #e30613; font-weight: 900; font-size: 1.8rem; line-height: 1; }
+        
+        /* Tooltip Vignette */
+        .tooltip-vignette { 
+            visibility: hidden; opacity: 0; width: 320px; 
+            background-color: white; color: #1a1a1a; 
+            position: absolute; bottom: 120%; left: 50%; 
+            transform: translateX(-50%) translateY(10px); 
+            padding: 1.5rem; border: 3px solid #009fe3; 
+            box-shadow: 10px 10px 0px rgba(0, 159, 227, 0.3); 
+            z-index: 50; transition: all 0.3s; 
+            pointer-events: none; text-transform: none; 
+            font-weight: 500; font-size: 0.9rem; line-height: 1.5; 
+        }
+        .tooltip-vignette h4 { 
+            color: #e30613; text-transform: uppercase; 
+            font-weight: 900; font-size: 0.8rem; 
+            margin-bottom: 0.5rem; letter-spacing: 0.05em; 
+        }
+        .tooltip-vignette::after { 
+            content: ""; position: absolute; top: 100%; left: 50%; 
+            margin-left: -10px; border-width: 10px; border-style: solid; 
+            border-color: #009fe3 transparent transparent transparent; 
+        }
+        .check-item:hover .tooltip-vignette { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* Simulateur Impôt */
+        .range-slider {
+            -webkit-appearance: none; width: 100%; height: 10px; background: #e5e7eb; outline: none; opacity: 0.9; transition: opacity .2s;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 25px; height: 25px; background: #e30613; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Vignettes Programmatiques */
+        .guarantee-card { 
+            position: relative; overflow: hidden;
+            border-left: 6px solid #1a1a1a; transition: all 0.3s; background: white; 
+            display: flex; flex-direction: column; justify-content: flex-start; cursor: pointer;
+        }
+        .guarantee-card:hover { border-left-color: #009fe3; transform: translateX(5px); background: #f9fafb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+        .local-vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 26, 26, 0.98); color: white; padding: 1.5rem;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; text-align: left;
+            opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(10px);
+            pointer-events: none;
+        }
+        .guarantee-card.flipped .local-vignette { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .click-hint {
+            position: absolute; top: 1rem; right: 1rem; font-size: 0.7rem; font-weight: 900;
+            text-transform: uppercase; color: #e30613; border: 1px solid #e30613; padding: 2px 6px; border-radius: 4px; opacity: 0.7;
+        }
+        
+        .budget-btn {
+            background: #1a1a1a; color: white; border: 2px solid #1a1a1a;
+            padding: 1rem 2rem; font-family: 'Oswald', sans-serif; text-transform: uppercase;
+            font-size: 1.2rem; letter-spacing: 0.1em; transition: all 0.3s;
+            cursor: pointer; position: relative; overflow: hidden;
+        }
+        .budget-btn:hover { background: #e30613; border-color: #e30613; }
+        
+        /* New Hero specific */
+        .hero-bg-shape {
+            position: absolute; right: 0; top: 0; width: 50%; height: 100%;
+            background: #f2f2f2; clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-white text-lfi-dark">
+
+    <!-- NAVIGATION -->
+    <header class="fixed top-0 left-0 w-full bg-white z-50 py-4 px-6 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <img src="https://scontent-cdg4-1.xx.fbcdn.net/v/t39.30808-6/451210797_873343874827803_5704456469701416320_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=BMHmtnSzGyEQ7kNvwFYQsBs&_nc_oc=AdlX-3YH32BDxypAl95KdlZsVx4bewheIOZ7DVj9jp-vPO6GWYcIRQyzlXtOWKQFRRKQI2ha6OcJZc33u6KJ7Tvs&_nc_zt=23&_nc_ht=scontent-cdg4-1.xx&_nc_gid=hq6yAzsFge3C2wIrzXrfpw&oh=00_Aftcifr_leb7eIZRtnr0wS5rwI9m4Fh-bY0AbddD00LDQA&oe=69A0E494" alt="Logo LFI" class="w-20 h-20 rounded-full object-cover shadow-sm border-2 border-lfi-cyan">
+            <div class="flex flex-col leading-none">
+                <span class="font-black uppercase text-lg tracking-tight text-lfi-dark">Châteauroux Populaire</span>
+                <span class="text-[10px] font-bold text-lfi-cyan uppercase tracking-widest">L'Avenir en Commun</span>
+            </div>
+        </div>
+        
+        <!-- BOUTONS D'ACTION -->
+        <div class="hidden lg:flex items-center gap-4">
+            
+            <!-- Pôle Citoyen (Vérification + Inscription) -->
+            <div class="flex flex-col items-end">
+                <a href="https://www.elections.interieur.gouv.fr/mes-demarches/je-verifie-ma-situation-electorale#:~:text=Mes%20d%C3%A9marches,-Je%20v%C3%A9rifie%20ma&text=Gr%C3%A2ce%20au%20t%C3%A9l%C3%A9service%20%C2%AB%20Interroger%20sa,les%20procurations%20re%C3%A7ues%20ou%20donn%C3%A9es." 
+                   target="_blank" 
+                   class="border-2 border-lfi-cyan text-lfi-cyan font-black uppercase text-xs px-4 py-2 hover:bg-lfi-cyan hover:text-white transition-all">
+                    Vérifier ma situation électorale
+                </a>
+                <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/R16396" 
+                   target="_blank" 
+                   class="text-[9px] font-black uppercase text-gray-500 hover:text-lfi-red mt-1 flex items-center gap-1 transition-colors">
+                    <span>▶</span> Pas inscrit ? S'inscrire en ligne
+                </a>
+            </div>
+
+            <!-- Pôle Politique -->
+            <a href="https://actionpopulaire.fr/groupes/82dacd31-5b21-4389-abb0-3d3afed41655/" 
+               target="_blank" 
+               class="bg-lfi-red text-white font-black uppercase text-xs px-6 py-4 hover:bg-black transition-colors shadow-lg">
+                Rejoindre le mouvement
+            </a>
+        </div>
+    </header>
+
+    <!-- SECTION 1: HERO (REFAITE LFI STYLE) -->
+    <section class="relative pt-32 pb-32 overflow-hidden lfi-angle-bottom bg-white">
+        <div class="hero-bg-shape hidden md:block"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 relative z-10 mt-8">
+            <div class="flex flex-col md:flex-row gap-16 items-start">
+                
+                <!-- Colonne Texte -->
+                <div class="w-full md:w-3/5 space-y-8">
+                    <div class="inline-block bg-lfi-cyan text-white font-black text-xs px-3 py-1 uppercase tracking-widest mb-2">
+                        Municipales 2026
+                    </div>
+                    
+                    <h1 class="section-title text-7xl md:text-8xl text-lfi-dark tracking-tighter">
+                        ON VIT DE <br>
+                        PLUS EN PLUS <span class="text-lfi-cyan">MAL.</span>
+                    </h1>
+                    
+                    <div class="lfi-skew inline-block bg-lfi-red px-6 py-2 shadow-lfi">
+                        <h2 class="section-title text-3xl md:text-5xl text-white italic transform skew-x-12">
+                            À CHÂTEAUROUX AUSSI.
+                        </h2>
+                    </div>
+
+                    <p class="text-xl md:text-2xl font-bold text-gray-700 leading-relaxed max-w-2xl mt-8">
+                        L'argent coule à flots pour les ultra-riches, mais ici, la vie devient plus rude. 
+                        <span class="lfi-marker px-1">Il est temps de tout changer.</span>
+                    </p>
+                    
+                    <div class="pt-6 flex flex-wrap gap-4">
+                        <button onclick="document.getElementById('section-partage').scrollIntoView()" class="bg-lfi-dark text-white font-black uppercase text-xl px-8 py-4 shadow-lfi hover:bg-lfi-cyan hover:shadow-lfi-cyan transition-all">
+                            Découvrir le Plan
+                        </button>
+                        <a href="https://programme.lafranceinsoumise.fr/" target="_blank" class="bg-white border-4 border-lfi-dark text-lfi-dark font-black uppercase text-xl px-8 py-4 shadow-lfi hover:bg-lfi-red hover:text-white hover:border-lfi-red transition-all">
+                            Programme National
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Colonne Visuelle (Cartes d'Alerte) -->
+                <div class="w-full md:w-2/5 flex flex-col gap-6 mt-8 md:mt-0">
+                    
+                    <!-- Carte 1 -->
+                    <div class="bg-white border-2 border-black p-6 shadow-lfi relative group hover:-translate-y-1 transition-transform">
+                        <div class="absolute -top-3 -right-3 bg-lfi-red text-white w-12 h-12 flex items-center justify-center font-black rounded-full z-10 text-xl">!</div>
+                        <h3 class="font-black text-2xl uppercase mb-2 text-lfi-dark">Urgence Sociale</h3>
+                        <div class="w-12 h-1 bg-lfi-cyan mb-4"></div>
+                        <p class="font-bold text-gray-600 leading-snug">
+                            Chômage en hausse. Crise du logement. <br>
+                            Familles à la rue.
+                        </p>
+                    </div>
+
+                    <!-- Carte 2 -->
+                    <div class="bg-white border-2 border-black p-6 shadow-lfi relative group hover:-translate-y-1 transition-transform">
+                        <h3 class="font-black text-2xl uppercase mb-2 text-lfi-dark">Urgence Économique</h3>
+                        <div class="w-12 h-1 bg-lfi-red mb-4"></div>
+                        <p class="font-bold text-gray-600 leading-snug">
+                            Faillites d'entreprises. Agriculteurs menacés. <br>
+                            Services publics sacrifiés.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: LE PARTAGE -->
+    <section id="section-partage" class="bg-lfi-dark text-white py-24 px-4 relative overflow-hidden">
+        <div class="max-w-6xl mx-auto reveal">
+            <h2 class="section-title text-5xl md:text-7xl mb-12 uppercase italic">Le problème n'est pas le manque d'argent, <span class="text-lfi-cyan">mais son partage.</span></h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+                <div class="space-y-6">
+                    <p class="text-2xl font-bold leading-tight">La cause est le <span class="text-lfi-red underline decoration-4 underline-offset-8 text-3xl">CAPITALISME MONDIALISÉ</span>, un système qui profite à une minorité. Pendant que notre vie devient plus rude, leurs fortunes s'envolent.</p>
+                </div>
+                <div class="border-l-4 border-lfi-cyan pl-8 space-y-4">
+                    <p class="text-xl opacity-80 italic">L'argent coule à flots... pour les ultra-riches.</p>
+                    <p class="text-sm uppercase tracking-widest font-black text-gray-400">Cliquez sur les données pour analyser le hold-up ↓</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Case 1 -->
+                <div id="stat-riches" onclick="toggleDetails('riches')" class="card-stat bg-white/5 p-8 border-t-8 border-lfi-cyan shadow-2xl">
+                    <span class="text-7xl font-black block leading-none tracking-tighter">x6</span>
+                    <p class="text-lg font-black uppercase mt-4 tracking-wide leading-tight">Fortune des <br>500 plus riches</p>
+                    <p class="text-xs mt-4 opacity-50 uppercase font-black">2010 vs Aujourd'hui</p>
+                </div>
+
+                <!-- Case 2 -->
+                <div id="stat-aides" onclick="toggleDetails('aides')" class="card-stat bg-white/5 p-8 border-t-8 border-lfi-red shadow-2xl">
+                    <span class="text-7xl font-black block leading-none tracking-tighter">200</span>
+                    <p class="text-lg font-black uppercase mt-4 tracking-wide leading-tight">Milliards d'aides <br>Publiques / An</p>
+                    <p class="text-xs mt-4 opacity-50 uppercase font-black">Versés sans contrôle</p>
+                </div>
+
+                <!-- Case 3 -->
+                <div id="stat-valeur" onclick="toggleDetails('valeur')" class="card-stat bg-white/5 p-8 border-t-8 border-gray-400 shadow-2xl">
+                    <span class="text-7xl font-black block leading-none tracking-tighter">-10%</span>
+                    <p class="text-lg font-black uppercase mt-4 tracking-wide leading-tight">Chute de la part <br>des salaires</p>
+                    <p class="text-xs mt-4 opacity-50 uppercase font-black">Depuis 1980</p>
+                </div>
+            </div>
+
+            <div id="detailed-text-box" class="bg-white text-lfi-dark p-8 md:p-12 rounded-sm shadow-[20px_20px_0px_0px_rgba(255,255,255,0.1)]">
+                
+                <div id="content-riches" class="hidden space-y-8">
+                    <div class="flex flex-col lg:flex-row gap-12 items-center">
+                        <div class="lg:w-1/2 space-y-6">
+                            <div>
+                                <h3 class="text-6xl font-black uppercase italic tracking-tighter text-lfi-cyan inline-block border-b-8 border-lfi-dark pb-2 mb-2">1 200 Md€</h3>
+                                <p class="text-sm font-black uppercase text-gray-400 tracking-widest">Patrimoine des 500 familles (2025)</p>
+                            </div>
+                            
+                            <p class="text-xl font-bold leading-relaxed text-gray-800">
+                                Ce chiffre donne le vertige. En 2010, ils possédaient 200 milliards. Aujourd'hui, c'est 1 200 milliards.
+                                <br><br>
+                                Pendant que l'inflation grignote vos salaires, <span class="bg-lfi-cyan text-white px-2 py-0.5">leur fortune a été multipliée par 6</span>. Cet argent n'a pas disparu, il a changé de poche : de la vôtre vers la leur.
+                            </p>
+
+                            <div class="flex items-center gap-4 bg-gray-50 border-2 border-lfi-red p-4 shadow-sm transform hover:scale-105 transition-transform duration-300">
+                                <div class="bg-lfi-red text-white font-black text-2xl w-12 h-12 flex items-center justify-center rounded-full">!</div>
+                                <div>
+                                    <span class="block text-3xl font-black text-lfi-dark leading-none">+ 1 000 Mds €</span>
+                                    <span class="text-xs font-bold uppercase text-lfi-red tracking-wider">Accumulés en 15 ans</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:w-1/2 w-full">
+                            <div class="chart-container bg-white p-4 border-2 border-gray-100 shadow-inner rounded-xl">
+                                <canvas id="wealthChart"></canvas>
+                            </div>
+                            <p class="text-center text-xs font-bold text-gray-400 mt-4 uppercase tracking-widest">Source : Challenges / Rapports Oxfam</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-aides" class="hidden space-y-8">
+                    <div class="flex flex-col lg:flex-row gap-12 items-center">
+                        <div class="lg:w-1/2 space-y-6">
+                            <h3 class="text-4xl font-black uppercase italic border-b-8 border-lfi-red pb-2 mb-4">L'argent public détourné</h3>
+                            <p class="text-xl leading-relaxed font-bold">Chaque année, plus de 200 milliards d'euros sont distribués aux grandes entreprises sans aucune contrepartie, ni écologique ni sociale.</p>
+                            <div class="highlight-box">
+                                <p class="text-lg">Cet argent, c'est celui de vos hôpitaux, de vos écoles à Châteauroux. C'est l'argent qui manque pour l'augmentation des salaires.</p>
+                            </div>
+                        </div>
+                        <div class="lg:w-1/2 w-full">
+                            <div class="chart-container bg-white p-4 border-2 border-gray-100 shadow-inner rounded-xl">
+                                <canvas id="aidesChart"></canvas>
+                            </div>
+                            <p class="text-center text-xs font-bold text-gray-400 mt-4 uppercase tracking-widest">Évolution estimée des aides (Mds €) - Rapport IRES</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-valeur" class="hidden space-y-8">
+                    <div class="flex flex-col lg:flex-row gap-12 items-center">
+                        <div class="lg:w-1/2 space-y-6">
+                            <h3 class="text-4xl font-black uppercase italic border-b-8 border-gray-400 pb-2 mb-6">Le vol de la valeur</h3>
+                            <p class="text-lg leading-relaxed font-medium">Dans les années 80, près de 70% de la richesse produite retournait aux salaires. Aujourd'hui, on nous a volé 10 points de cette richesse au profit quasi exclusif des dividendes.</p>
+                            <div class="bg-lfi-dark text-white p-6">
+                                <p class="text-sm font-black uppercase tracking-widest mb-2">Notre Solution :</p>
+                                <p class="text-xl italic">Indexation des salaires sur l'inflation et SMIC à 1600€ net.</p>
+                            </div>
+                        </div>
+                        <div class="lg:w-1/2 w-full">
+                            <div class="chart-container bg-white p-4 border-2 border-gray-100 shadow-inner rounded-xl">
+                                <canvas id="valeurChart"></canvas>
+                            </div>
+                            <p class="text-center text-xs font-bold text-gray-400 mt-4 uppercase tracking-widest">Part des salaires dans la Valeur Ajoutée (%)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: PROGRAMME DE RUPTURE -->
+    <section class="py-24 px-4 bg-gray-50 border-y-2 border-gray-200">
+        <div class="max-w-7xl mx-auto reveal">
+            <h2 class="section-title text-6xl md:text-8xl mb-4 text-lfi-dark italic">PROGRAMME DE <span class="text-lfi-cyan underline">RUPTURE.</span></h2>
+            <p class="text-2xl font-bold mb-16 text-gray-500">Nos 9 piliers pour Châteauroux : le plan d'action communaliste LFI.</p>
+            <p class="text-sm font-black uppercase text-lfi-red mb-8 tracking-widest text-center animate-pulse">CLIQUEZ SUR LES CARTES POUR VOIR L'APPLICATION LOCALE</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+                
+                <!-- 01. Révolution Citoyenne -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">01.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Commencer la Révolution Citoyenne</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>RIC d'initiative locale et citoyenne.</li>
+                            <li>Droit de révocation des élu·es.</li>
+                            <li>Assemblées citoyennes tirées au sort.</li>
+                            <li>Budget participatif contraignant.</li>
+                            <li>Droit d'interpellation locale populaire.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Le RIC Municipal</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Déclenchement :</strong> Par 10% des résidents (incl. +16 ans et étrangers).</li>
+                            <li><strong>Vote Systématique :</strong> Sur tous les projets structurants.</li>
+                            <li><strong>Plateforme Numérique :</strong> Sécurisée pour l'intégrité des pétitions.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 02. Régies Publiques -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">02.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Gérer les Communs par des Régies</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Création de Pôles publics locaux.</li>
+                            <li>Fin définitive des délégations au privé (DSP).</li>
+                            <li>Transparence totale des coûts.</li>
+                            <li>Gratuité des premiers m³ d'eau.</li>
+                            <li>Socialisation des bénéfices locaux.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Régie Publique de l'Eau</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Fin des Contrats Privés :</strong> Retour en régie au 1er janvier 2028.</li>
+                            <li><strong>Gratuité :</strong> Premiers m³ essentiels gratuits.</li>
+                            <li><strong>Réinvestissement :</strong> 750k€/an pour la maintenance des réseaux.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 03. Règle Verte -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">03.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Instaurer la Règle Verte Communale</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Ne pas prendre plus que ce que la nature reconstitue.</li>
+                            <li>Plan d'urgence d'adaptation au climat.</li>
+                            <li>Dépollution massive et systématique.</li>
+                            <li>Objectif 100% d'énergies renouvelables.</li>
+                            <li>Sanctuarisation stricte des terres agricoles.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">L'Humain avant les Gadgets</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Rupture :</strong> Annulation des projets de navettes autonomes.</li>
+                            <li><strong>Réseau :</strong> Flotte de Bus Bio-GNV/Électriques avec chauffeurs.</li>
+                            <li><strong>Gratuité Renforcée :</strong> Fréquence 10-12 min et lignes de nuit.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 04. Zéro Chômeur -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">04.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Communes Zéro Chômeur</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Garantie d'emploi solidaire pour tous.</li>
+                            <li>Réduction collective du temps de travail.</li>
+                            <li>Emplois utiles à la transition écologique.</li>
+                            <li>Soutien massif aux coopératives (SCOP).</li>
+                            <li>Relocalisation des activités productives.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">L'Utilité Publique</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>TZCLD :</strong> Création d'une EBE (CDI missions intérêt général).</li>
+                            <li><strong>Couplage Eau :</strong> Emplois dédiés de maintenance des réseaux.</li>
+                            <li><strong>Priorité :</strong> Relocalisation des emplois non délocalisables.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 05. Spéculation -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">05.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Tuer la Spéculation Immobilière</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Encadrement strict à la baisse des loyers.</li>
+                            <li>Garantie universelle des loyers.</li>
+                            <li>Construction massive de logements sociaux.</li>
+                            <li>Réquisition immédiate des logements vides.</li>
+                            <li>Régulation et interdiction ciblée des Airbnb.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Droit au Logement</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Zéro Sans-Abri :</strong> Plan "Logement d'Abord" inconditionnel.</li>
+                            <li><strong>Réquisition :</strong> Exercice du droit de réquisition sur le vacant.</li>
+                            <li><strong>Anti-Airbnb :</strong> Encadrement et plafonnement stricts.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 06. Alimentation -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">06.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Garantir l'Alimentation</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Blocage des marges de l'agro-industrie.</li>
+                            <li>Vers une Sécurité sociale de l'alimentation.</li>
+                            <li>Cantines 100% bio, locales et sans plastique.</li>
+                            <li>Création de régies agricoles municipales.</li>
+                            <li>Soutien aux circuits-courts paysans.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Cantines Bio & Locales</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>100% Bio & Local :</strong> Cuisines centrales et circuits courts.</li>
+                            <li><strong>Gratuité Totale :</strong> Pour les familles sous le seuil de pauvreté.</li>
+                            <li><strong>Anti-Gaspillage :</strong> Préparation sur place pour réduire de 30%.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 07. École -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">07.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Garantir l'Accès aux Services</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Gratuité totale de l'École Publique (fournitures).</li>
+                            <li>Rénovation thermique systématique du bâti.</li>
+                            <li>Financement exclusivement public pour le public.</li>
+                            <li>Baisse radicale des effectifs par classe.</li>
+                            <li>Recrutement de personnels encadrants statutaires.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Soutien Inconditionnel</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Fournitures :</strong> Gratuité totale dès la rentrée 2026.</li>
+                            <li><strong>Rénovation :</strong> Priorité absolue à l'isolation thermique du bâti.</li>
+                            <li><strong>Laïcité :</strong> Refus de financer les écoles privées (hors obligations légales).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 08. Pauvreté/Santé -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">08.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Plan Contre la Précarité</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Création de Centres de santé municipaux.</li>
+                            <li>Salariat garanti des professionnels médicaux.</li>
+                            <li>Remboursement à 100% par la Sécurité Sociale.</li>
+                            <li>Plan d'éradication des déserts médicaux locaux.</li>
+                            <li>Prise en charge publique de la dépendance.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Bouclier Santé 360°</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Centre Municipal :</strong> Création d'un CMS et salariat de 4 à 6 médecins.</li>
+                            <li><strong>Bourses Étudiants :</strong> 1 200 €/mois contre 5 ans d'exercice local.</li>
+                            <li><strong>Guichet de Sortie :</strong> Transports pris en charge si soin impossible sur place.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 09. Paix -->
+                <div class="guarantee-card p-6 shadow-lg min-h-[400px]" onclick="toggleFlip(this)">
+                    <div class="click-hint">Plan Local +</div>
+                    <div>
+                        <span class="text-lfi-cyan font-black text-4xl italic block mb-2">09.</span>
+                        <h3 class="font-black text-xl uppercase leading-none mb-1">Des Communes Engagées</h3>
+                        <ul class="text-sm text-gray-600 mt-4 space-y-1 list-disc pl-4 marker:text-lfi-cyan">
+                            <li>Soutien inconditionnel à une diplomatie pour la paix.</li>
+                            <li>Lutte active contre toutes les discriminations.</li>
+                            <li>Organisation d'un accueil digne et solidaire.</li>
+                            <li>Création de jumelages de solidarité internationale.</li>
+                            <li>Refus strict des politiques de criminalisation.</li>
+                        </ul>
+                    </div>
+                    <!-- VIGNETTE LOCALE -->
+                    <div class="local-vignette">
+                        <h4 class="text-lfi-cyan text-sm font-black uppercase mb-4 italic leading-tight">Exemples de mesures possibles pour Châteauroux</h4>
+                        <h5 class="font-bold text-white mb-2 uppercase border-b-2 border-lfi-red pb-1">Fraternité et Inclusion</h5>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4 marker:text-lfi-red">
+                            <li><strong>Anti-Discriminations :</strong> Observatoire municipal et constitution de partie civile.</li>
+                            <li><strong>Maison des Femmes :</strong> Accueil, écoute et soin des victimes.</li>
+                            <li><strong>International :</strong> Motion en conseil pour la Paix et le soutien au peuple Palestinien.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- BOUTON ÉVOLUTION BUDGET -->
+            <div class="flex justify-center mt-12">
+                <button onclick="toggleBudget()" class="budget-btn lfi-angle">
+                    Voir la Trajectoire Financière (2026-2037)
+                </button>
+            </div>
+
+            <!-- CONTENU BUDGET (Graphique et Synthèse) -->
+            <div id="budget-evolution">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-5xl font-black uppercase italic mb-12 text-center text-lfi-cyan">De la Transition <span class="text-white">à la Gratuité</span></h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+                        <div class="p-6 border-l-4 border-lfi-red bg-white/5">
+                            <h4 class="text-2xl font-bold uppercase mb-4 text-white">Mandat 1 : La Transition (2026-2031)</h4>
+                            <p class="text-gray-300 text-sm mb-4">L'investissement initial (creusement en 2026-2027) génère un déficit temporaire assumé pour capter les ressources. Une fois la pompe lancée (Régie Eau + LED), les économies financent le social.</p>
+                            <ul class="text-sm space-y-2 text-white font-bold">
+                                <li>• Déficit initial : -2,7 M€ (2026)</li>
+                                <li>• Point d'équilibre : 2029</li>
+                                <li>• Excédent final : +1,2 M€ (2031)</li>
+                            </ul>
+                        </div>
+                        <div class="p-6 border-l-4 border-lfi-cyan bg-white/5">
+                            <h4 class="text-2xl font-bold uppercase mb-4 text-white">Mandat 2 : L'Autonomie (2032-2037)</h4>
+                            <p class="text-gray-300 text-sm mb-4">La ville se libère de la dette et devient un territoire de profit citoyen. Les excédents permettent de financer les grands projets (Cité Numérique, Logement) sans emprunt.</p>
+                            <ul class="text-sm space-y-2 text-white font-bold">
+                                <li>• Excédent moyen : +10,2 M€ / an</li>
+                                <li>• Dette : 0 € en 2038</li>
+                                <li>• Autofinancement : 100%</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 4: VIVRE DIGNEMENT (SANCTUARISÉE) -->
+    <section class="bg-[#121212] py-24 px-4 border-t-8 border-lfi-red relative overflow-hidden">
+        <div class="max-w-5xl mx-auto reveal">
+            <h2 class="section-title text-6xl md:text-8xl mb-8 text-white italic">VIVRE <span class="text-lfi-red underline">DIGNEMENT.</span></h2>
+            <p class="text-xl font-bold mb-16 text-gray-400 max-w-3xl">Face à l'urgence, le Nouveau Front Populaire propose des mesures immédiates. <span class="text-lfi-cyan italic">(Survolez les mesures pour les détails chiffrés)</span></p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-14 text-lg font-black uppercase tracking-tight relative z-20">
+                <div class="check-item text-white">
+                    <span class="text-lfi-red text-2xl">SMIC À 1600€ NET</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Hausse immédiate des salaires par décret.</p>
+                    <div class="tooltip-vignette">
+                        <h4>POUVOIR D'ACHAT</h4>
+                        <p>Augmentation immédiate du SMIC à 1600€ net (+200€ par mois). Cette hausse entraîne une revalorisation de toute l'échelle des salaires. Financement par la taxation des super-profits.</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-lfi-cyan text-2xl">BLOCAGE DES PRIX</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Sur l'alimentation, l'énergie et le carburant.</p>
+                    <div class="tooltip-vignette">
+                        <h4>URGENCE VITALE</h4>
+                        <p>Blocage des prix des produits de première nécessité (panier NFP), de l'électricité et du gaz. Fin des marges abusives des géants de l'agro-alimentaire.</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-gray-100 text-2xl">EAU & ÉNERGIE</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Gratuité des premiers m³ indispensables.</p>
+                    <div class="tooltip-vignette">
+                        <h4>BIENS COMMUNS</h4>
+                        <p>Gratuité des premiers m3 d'eau et des premiers kWh pour les besoins de base. Tarification progressive pour les usages de luxe (piscines, etc.).</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-gray-100 text-2xl">PRIX PLANCHERS</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Garantie de revenus pour nos agriculteurs.</p>
+                    <div class="tooltip-vignette">
+                        <h4>JUSTICE PAYSANNE</h4>
+                        <p>Interdiction d'acheter les produits agricoles sous leur coût de production. Garantie de prix planchers pour assurer un revenu digne aux paysans de l'Indre.</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-lfi-red text-2xl">RETRAITE À 60 ANS</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Abrogation de la réforme injuste de Macron.</p>
+                    <div class="tooltip-vignette">
+                        <h4>DROIT AU REPOS</h4>
+                        <p>Rétablissement de la retraite à 60 ans avec 40 annuités. Aucune pension sous le SMIC. Prise en compte réelle de la pénibilité des métiers.</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-lfi-cyan text-2xl">MINIMA SOCIAUX</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Revalorisés au niveau du seuil de pauvreté.</p>
+                    <div class="tooltip-vignette">
+                        <h4>DIGNITÉ POUR TOUS</h4>
+                        <p>Indexation automatique du RSA et des minima sur l'inflation. Personne en dessous du seuil de pauvreté (1158€).</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-gray-100 text-2xl">GARANTIE JEUNESSE</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Allocation d'autonomie pour les 18-25 ans.</p>
+                    <div class="tooltip-vignette">
+                        <h4>LIBÉRER L'AVENIR</h4>
+                        <p>Allocation d'autonomie pour les étudiants et lycéens professionnels, afin que personne ne soit obligé de travailler pour financer ses études.</p>
+                    </div>
+                </div>
+                <div class="check-item text-white">
+                    <span class="text-gray-100 text-2xl">BAISSE DES LOYERS</span>
+                    <p class="text-sm font-medium text-gray-500 normal-case mt-1">Encadrement et hausse des APL de 10%.</p>
+                    <div class="tooltip-vignette">
+                        <h4>DROIT AU LOGEMENT</h4>
+                        <p>Encadrement strict des loyers, hausse des APL et moratoire sur les expulsions sans relogement.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="absolute top-1/2 left-0 -translate-y-1/2 opacity-[0.02] text-[25rem] font-black -rotate-12 pointer-events-none select-none text-white">DIGNITÉ</div>
+    </section>
+
+    <!-- SECTION 5: SIMULATEUR ET DETAILS -->
+    <section class="bg-gray-100 py-24 px-4 border-y-4 border-lfi-dark relative">
+        <div class="max-w-5xl mx-auto reveal">
+            <h2 class="section-title text-5xl md:text-7xl mb-6 text-center italic text-lfi-dark">RÉVOLUTION <br><span class="text-lfi-red">FISCALE.</span></h2>
+            <p class="text-center text-xl font-bold text-gray-600 mb-12">92% des Français paieront moins d'impôts. <br>Calculez votre gain mensuel :</p>
+            
+            <div class="bg-white p-8 md:p-12 shadow-2xl border-b-8 border-lfi-cyan mb-12">
+                <div class="flex flex-col gap-8">
+                    <div class="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+                        <div class="mb-6">
+                            <label class="block text-xs font-black uppercase text-gray-400 mb-2">Salaire Net Mensuel</label>
+                            <div class="flex items-center gap-4">
+                                <input type="number" id="taxSalary" value="2000" class="w-full bg-transparent border-b-4 border-lfi-dark text-4xl font-black outline-none py-2 text-lfi-dark">
+                                <span class="text-4xl font-black text-gray-300">€</span>
+                            </div>
+                            <input type="range" min="1000" max="8000" value="2000" class="range-slider mt-4" id="taxSlider">
+                        </div>
+                        <div class="flex gap-4 text-sm font-bold">
+                            <label class="flex items-center gap-2"><input type="radio" name="parts" value="1" checked class="accent-lfi-cyan"> Célibataire</label>
+                            <label class="flex items-center gap-2"><input type="radio" name="parts" value="2" class="accent-lfi-cyan"> Couple</label>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-6 border-2 border-gray-200 text-center opacity-60">
+                            <h4 class="text-xs font-black uppercase text-gray-500 mb-2">Impôt Macron</h4>
+                            <span id="macronTax" class="text-3xl font-bold text-gray-700">120 €</span>
+                        </div>
+                        <div id="nfpBox" class="p-6 bg-lfi-cyan text-white text-center lfi-angle shadow-xl">
+                            <h4 class="text-xs font-black uppercase mb-2">Impôt NFP</h4>
+                            <span id="nfpTax" class="text-5xl font-black">80 €</span>
+                            <div id="gainTag" class="mt-4 inline-block bg-white text-lfi-cyan font-black px-3 py-1 text-sm uppercase italic"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOUVEAUX DÉTAILS AVEC GRAPHIQUES -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                <!-- Tranches -->
+                <div class="p-6 border-l-4 border-lfi-dark bg-white shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black uppercase text-lg mb-2 text-lfi-dark">14 Tranches</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed font-medium">Contre 5 aujourd'hui. Pour rendre l'impôt plus progressif : ceux qui gagnent peu paient moins, ceux qui gagnent énormément paient plus.</p>
+                    </div>
+                    <div class="mini-chart-container">
+                        <canvas id="tranchesChart"></canvas>
+                    </div>
+                </div>
+                <!-- CSG -->
+                <div class="p-6 border-l-4 border-lfi-dark bg-white shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black uppercase text-lg mb-2 text-lfi-dark">CSG Progressive</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed font-medium">La CSG deviendra progressive selon le revenu. C'est la mesure clé qui permet de baisser l'impôt pour 92% des actifs.</p>
+                    </div>
+                    <div class="mini-chart-container">
+                        <canvas id="csgChart"></canvas>
+                    </div>
+                </div>
+                <!-- ISF / Privilèges -->
+                <div class="p-6 border-l-4 border-lfi-red bg-white shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black uppercase text-lg mb-2 text-lfi-red">Fin des Privilèges</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed font-medium">Suppression de la "Flat Tax" et rétablissement d'un ISF (Impôt de Solidarité sur la Fortune) renforcé et climatique pour financer l'État.</p>
+                    </div>
+                    <div class="mini-chart-container">
+                        <canvas id="privilegesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION : KIOSQUE MILITANT -->
+    <section class="py-16 px-4 bg-gray-900 border-t-8 border-lfi-cyan relative overflow-hidden">
+        <div class="max-w-6xl mx-auto reveal text-center relative z-10">
+            <h2 class="section-title text-4xl md:text-5xl mb-4 text-white italic">KIOSQUE <span class="text-lfi-cyan">MILITANT</span></h2>
+            <p class="text-gray-400 font-bold mb-8">Consultez et diffusez nos derniers tracts locaux.</p>
+            
+            <div class="flex flex-col md:flex-row justify-center items-center gap-6">
+                
+                <!-- Bouton Tract 1 (Modale Multi-pages) -->
+                <button onclick="openTractModal(['https://scontent-cdg4-2.xx.fbcdn.net/v/t39.30808-6/643878713_34072250619088415_5963209313150248073_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=13d280&_nc_ohc=tMEHgPaE19IQ7kNvwFrx27b&_nc_oc=AdlAW1dF3tKPGaqdTekMN2eSXTh82ucSsb4hUy_HN1O22K7FpXRpycUyCczq-NB4JPg&_nc_zt=23&_nc_ht=scontent-cdg4-2.xx&_nc_gid=aX7Edy5XWZW6P2HBg1gcSw&oh=00_AftTp38J2HfjJvqCGapA43mu0LbBLpDoU_K_iqGo997XxA&oe=69A62B5E', 'https://scontent-cdg4-2.xx.fbcdn.net/v/t39.30808-6/641461798_34072251945754949_8601687902436648871_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=13d280&_nc_ohc=AA8UzoGTbDUQ7kNvwEF6tdv&_nc_oc=AdlZohr71-AmaotujAVqsPk1DNoOmbHrXtocb5obK5oRyLa5hJIn8PTuh6HQQwCHOUo&_nc_zt=23&_nc_ht=scontent-cdg4-2.xx&_nc_gid=0Vb_TG9cv3Ho2S8JVF-IZg&oh=00_AftQoCQumHvtEC38QjJbUZGr02vU0A_9viwsvVuhwQjRiw&oe=69A60C61'])" class="group relative flex items-center justify-between w-full md:w-auto bg-white border-2 border-white hover:border-lfi-cyan text-lfi-dark px-6 py-4 transition-all focus:outline-none text-left">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-lfi-cyan text-white p-2">
+                            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+                        </div>
+                        <div class="text-left">
+                            <span class="block text-xs font-black text-gray-500 uppercase tracking-widest">Tract Municipal</span>
+                            <span class="block font-black text-lg uppercase">Le Hold-Up Local</span>
+                        </div>
+                    </div>
+                    <span class="ml-6 text-lfi-cyan group-hover:translate-x-1 transition-transform">▶</span>
+                </button>
+
+                <!-- Bouton Tract 2 (Modale Multi-pages) -->
+                <button onclick="openTractModal(['https://scontent-cdg4-2.xx.fbcdn.net/v/t39.30808-6/642271850_34072750869038390_6841162780490740068_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=13d280&_nc_ohc=Kc5BxE_hhqAQ7kNvwGQrHwU&_nc_oc=AdmOHasCz7u4bJYWNLPMu2A9Qlf9XY4dUkJg4xjRrZhxxYKXSq1IOZHrfrdV7N5N5jM&_nc_zt=23&_nc_ht=scontent-cdg4-2.xx&_nc_gid=TTwWHyOH6fXapCsj2pIU9g&oh=00_AftVDiOna8YgMGtVnWdWECARIIYFstjPNRvldXquF406Cw&oe=69A64A2A', 'https://scontent-cdg4-1.xx.fbcdn.net/v/t39.30808-6/641478468_34072752222371588_5015724547578458745_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=13d280&_nc_ohc=Xc2wrlryR6oQ7kNvwHJuqOy&_nc_oc=Admb70S9rsxC_qKCPPXlFpYydtqA82B2AeJ7Kv0jMaXyF6kwG-6jrwslfDrVpwMB3Jk&_nc_zt=23&_nc_ht=scontent-cdg4-1.xx&_nc_gid=mBD1_dopLJmX-gzosF46CA&oh=00_AfuRnHgWleEEemp7WLNFqABdCCTIGA1hCOjMjV6pS4XoPQ&oe=69A6424B'])" class="group relative flex items-center justify-between w-full md:w-auto bg-white border-2 border-white hover:border-lfi-red text-lfi-dark px-6 py-4 transition-all focus:outline-none text-left">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-lfi-red text-white p-2">
+                            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+                        </div>
+                        <div class="text-left">
+                            <span class="block text-xs font-black text-gray-500 uppercase tracking-widest">Tract Antifasciste</span>
+                            <span class="block font-black text-lg uppercase">Face à l'Extrême Droite</span>
+                        </div>
+                    </div>
+                    <span class="ml-6 text-lfi-red group-hover:translate-x-1 transition-transform">▶</span>
+                </button>
+                
+            </div>
+            
+            <p class="text-xs text-gray-500 mt-4 italic">Cliquez sur un tract pour le lire.</p>
+        </div>
+        <!-- Motif de fond discret -->
+        <div class="absolute top-0 right-0 opacity-5 pointer-events-none">
+            <svg width="400" height="400" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 22h20L12 2z"/></svg>
+        </div>
+    </section>
+
+    <!-- FOOTER / APPEL À L'ACTION -->
+    <section class="py-24 px-4 bg-white flex flex-col items-center text-center border-t-8 border-gray-100">
+        <h2 class="section-title text-7xl md:text-8xl mb-12 italic">2027 COMMENCE <br><span class="text-lfi-red">ICI.</span></h2>
+        
+        <a href="https://actionpopulaire.fr/groupes/82dacd31-5b21-4389-abb0-3d3afed41655/" target="_blank" class="bg-lfi-dark text-white font-black px-12 py-6 text-2xl lfi-angle hover:bg-lfi-cyan transition-all uppercase italic shadow-lfi mb-8">
+            Agir maintenant
+        </a>
+
+        <!-- Boutons d'inscription électorale (Visibles uniquement sur mobile) -->
+        <div class="lg:hidden w-full max-w-sm flex flex-col gap-4 mt-2">
+            <a href="https://www.elections.interieur.gouv.fr/mes-demarches/je-verifie-ma-situation-electorale#:~:text=Mes%20d%C3%A9marches,-Je%20v%C3%A9rifie%20ma&text=Gr%C3%A2ce%20au%20t%C3%A9l%C3%A9service%20%C2%AB%20Interroger%20sa,les%20procurations%20re%C3%A7ues%20ou%20donn%C3%A9es." 
+               target="_blank" 
+               class="w-full border-2 border-lfi-cyan text-lfi-cyan bg-white font-black uppercase text-sm px-4 py-4 shadow-sm hover:bg-lfi-cyan hover:text-white transition-all">
+                Vérifier ma situation électorale
+            </a>
+            <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/R16396" 
+               target="_blank" 
+               class="w-full text-xs font-black uppercase text-gray-500 hover:text-lfi-red flex items-center justify-center gap-2 transition-colors">
+                <span class="text-lfi-red text-lg leading-none">▶</span> Pas inscrit ? S'inscrire en ligne
+            </a>
+        </div>
+    </section>
+
+    <footer class="bg-lfi-dark text-white py-16 px-6 relative">
+        <div class="max-w-4xl mx-auto flex flex-col items-center gap-10">
+            <!-- LIENS SOCIAUX SVG -->
+            <div class="flex flex-wrap justify-center gap-8 md:gap-12">
+                <!-- Facebook -->
+                <a href="https://www.facebook.com/franceinsoumiseindre36/?locale=fr_FR" target="_blank" class="text-gray-400 hover:text-lfi-cyan transition-colors" aria-label="Facebook">
+                    <svg class="w-10 h-10 fill-current" viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                </a>
+                <!-- Instagram -->
+                <a href="https://www.instagram.com/lafranceinsoumiseindre/" target="_blank" class="text-gray-400 hover:text-lfi-red transition-colors" aria-label="Instagram">
+                    <svg class="w-10 h-10 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                    </svg>
+                </a>
+                <!-- X (Twitter) -->
+                <a href="https://x.com/LFI36" target="_blank" class="text-gray-400 hover:text-lfi-cyan transition-colors" aria-label="X (Twitter)">
+                    <svg class="w-10 h-10 fill-current" viewBox="0 0 24 24">
+                        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+                    </svg>
+                </a>
+                <!-- Bouton Contact (Enveloppe Mail) -->
+                <button onclick="openEmailModal()" class="text-gray-400 hover:text-lfi-cyan transition-colors focus:outline-none" aria-label="Nous contacter par e-mail">
+                    <svg class="w-10 h-10 fill-current" viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="w-24 h-1 bg-lfi-red"></div>
+            <p class="text-gray-400 text-[10px] font-black uppercase tracking-[0.5em] text-center leading-loose">
+                Châteauroux Populaire 2027<br>L'Avenir en commun.
+            </p>
+        </div>
+    </footer>
+
+    <!-- NOUVELLE MODALE POUR AFFICHER LES TRACTS EN IMAGE (AVEC BOUTON PARTAGER ET ZOOM) -->
+    <div id="tractModal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-2 md:p-8 transition-opacity opacity-0" onclick="if(event.target === this) closeTractModal()">
+        <button onclick="closeTractModal()" class="absolute top-2 right-4 md:top-6 md:right-8 text-gray-400 hover:text-white text-5xl font-black leading-none focus:outline-none z-50 transition-colors">&times;</button>
+        <div class="relative w-full h-full flex flex-col justify-center items-center transform scale-95 transition-transform duration-300" id="tractModalContent">
+            
+            <!-- Instruction de zoom et scroll pour mobile -->
+            <div id="pinchInstruction" class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex flex-col items-center gap-2 md:hidden">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                    Pincez pour zoomer
+                </div>
+                <!-- Indicateur de page 2 (clignotant) -->
+                <div id="scrollInstruction" class="text-lfi-cyan animate-pulse hidden bg-lfi-cyan/10 px-3 py-1 rounded-full">
+                    ↓ Faites défiler pour lire la suite ↓
+                </div>
+            </div>
+
+            <!-- Conteneur pour gérer une ou plusieurs images -->
+            <div id="tractImagesContainer" class="flex flex-col md:flex-row gap-4 overflow-auto max-w-full max-h-[85vh] p-2 items-center rounded-sm" style="scrollbar-width: none;">
+                <!-- Les images seront injectées ici par Javascript -->
+            </div>
+            
+            <!-- BOUTON PARTAGER & ZOOM -->
+            <div class="mt-4 flex flex-wrap justify-center gap-4 z-50 shrink-0">
+                <button onclick="shareTract()" class="bg-lfi-cyan text-white px-6 py-3 border-2 border-lfi-cyan font-black uppercase tracking-widest hover:bg-white hover:text-lfi-cyan transition-colors shadow-lfi flex items-center gap-3">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92zM18 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm12 7.02c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
+                    <span id="shareBtnText">Partager</span>
+                </button>
+
+                <!-- Bouton de Zoom unifié pour tous les supports -->
+                <button id="zoomBtn" onclick="toggleZoom()" class="flex bg-lfi-dark text-white px-6 py-3 border-2 border-lfi-dark font-black uppercase tracking-widest hover:bg-lfi-cyan transition-colors shadow-lfi items-center gap-3">
+                    🔍 Zoomer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE CHOIX E-MAIL -->
+    <div id="emailModal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-4 transition-opacity opacity-0" onclick="if(event.target === this) closeEmailModal()">
+        <div class="bg-white max-w-md w-full p-8 border-t-8 border-lfi-cyan shadow-lfi transform scale-95 transition-transform duration-300 relative" id="emailModalContent">
+            <button onclick="closeEmailModal()" class="absolute top-4 right-6 text-gray-400 hover:text-lfi-red text-4xl font-black leading-none focus:outline-none">&times;</button>
+            <h3 class="text-3xl font-black uppercase italic text-lfi-dark mb-4">NOUS <span class="text-lfi-cyan">CONTACTER</span></h3>
+            
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+                <p class="text-sm font-bold text-green-800">L'adresse <span class="text-black font-black">franceinsoumiseindre@gmail.com</span> a été copiée dans votre presse-papier !</p>
+            </div>
+            
+            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Choisissez votre messagerie :</p>
+            
+            <div class="space-y-3">
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=franceinsoumiseindre@gmail.com" target="_blank" class="block w-full text-center border-2 border-gray-200 py-3 font-bold text-gray-700 hover:border-[#ea4335] hover:text-[#ea4335] transition-colors flex items-center justify-center gap-3">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>
+                    Ouvrir avec Gmail
+                </a>
+                <a href="https://outlook.live.com/mail/0/deeplink/compose?to=franceinsoumiseindre@gmail.com" target="_blank" class="block w-full text-center border-2 border-gray-200 py-3 font-bold text-gray-700 hover:border-[#0078d4] hover:text-[#0078d4] transition-colors flex items-center justify-center gap-3">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M1.175 3.328L13.84 0l.044 6.83 8.941-2.028v14.167l-8.94 2.148-.04 6.883L1.175 20.672V3.328zm12.71 16.635V3.91L2.83 5.4v13.2l11.054 1.363z"/></svg>
+                    Ouvrir Outlook / Hotmail
+                </a>
+                <a href="https://compose.mail.yahoo.com/?to=franceinsoumiseindre@gmail.com" target="_blank" class="block w-full text-center border-2 border-gray-200 py-3 font-bold text-gray-700 hover:border-[#6001d2] hover:text-[#6001d2] transition-colors flex items-center justify-center gap-3">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M22.38 0l-9.15 16.29v7.71h-2.4v-7.71l-9.18-16.29h2.64l7.74 13.92 7.68-13.92z"/></svg>
+                    Ouvrir avec Yahoo
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function reveal() {
+            var reveals = document.querySelectorAll(".reveal");
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                if (elementTop < windowHeight - 100) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        reveal();
+
+        function toggleDetails(type) {
+            const box = document.getElementById('detailed-text-box');
+            const contentRiches = document.getElementById('content-riches');
+            const contentAides = document.getElementById('content-aides');
+            const contentValeur = document.getElementById('content-valeur');
+            
+            const cardRiches = document.getElementById('stat-riches');
+            const cardAides = document.getElementById('stat-aides');
+            const cardValeur = document.getElementById('stat-valeur');
+            
+            // Reset all
+            [cardRiches, cardAides, cardValeur].forEach(el => el && el.classList.remove('active'));
+            [contentRiches, contentAides, contentValeur].forEach(el => el && el.classList.add('hidden'));
+
+            if (type === 'riches') {
+                contentRiches.classList.remove('hidden');
+                cardRiches.classList.add('active');
+                box.style.boxShadow = "20px 20px 0px 0px rgba(0, 159, 227, 0.3)";
+                initWealthChart();
+            } else if (type === 'aides') {
+                contentAides.classList.remove('hidden');
+                cardAides.classList.add('active');
+                box.style.boxShadow = "20px 20px 0px 0px rgba(227, 6, 19, 0.3)";
+                initAidesChart();
+            } else if (type === 'valeur') {
+                contentValeur.classList.remove('hidden');
+                cardValeur.classList.add('active');
+                box.style.boxShadow = "20px 20px 0px 0px rgba(156, 163, 175, 0.3)";
+                initValeurChart();
+            }
+            
+            box.classList.add('visible');
+            setTimeout(() => { 
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+            }, 150);
+        }
+
+        function toggleFlip(element) {
+            document.querySelectorAll('.guarantee-card').forEach(card => {
+                if (card !== element) card.classList.remove('flipped');
+            });
+            element.classList.toggle('flipped');
+        }
+
+        function toggleBudget() {
+            const el = document.getElementById('budget-evolution');
+            el.classList.toggle('visible');
+            if (el.classList.contains('visible')) {
+                setTimeout(initBudgetChart, 300);
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // --- GESTION DE LA MODALE DES TRACTS EN IMAGE ---
+        let isZoomed = false;
+
+        function openTractModal(imageUrls) {
+            const modal = document.getElementById('tractModal');
+            const content = document.getElementById('tractModalContent');
+            const container = document.getElementById('tractImagesContainer');
+            
+            // Nettoyage et préparation des images
+            container.innerHTML = '';
+            let urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+            
+            // Réinitialise l'état du zoom à l'ouverture
+            isZoomed = false;
+            const btnZoom = document.getElementById('zoomBtn');
+            if(btnZoom) btnZoom.innerHTML = '🔍 Zoomer';
+            
+            // On s'assure que sur mobile ce soit bien empilé de haut en bas (flex-col)
+            container.className = 'flex flex-col md:flex-row gap-4 overflow-auto max-w-full max-h-[85vh] p-2 items-center rounded-sm';
+            
+            // Gestion de l'instruction "Scroll" pour mobile
+            const scrollInst = document.getElementById('scrollInstruction');
+            if(scrollInst) {
+                if(urls.length > 1) {
+                    scrollInst.classList.remove('hidden');
+                } else {
+                    scrollInst.classList.add('hidden');
+                }
+            }
+
+            // GESTION DU Méta Viewport pour autoriser le zoom natif quand la modale est ouverte (Smartphones)
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            if (viewportMeta) {
+                viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+            }
+
+            urls.forEach((url, index) => {
+                // Ajout d'un marqueur visuel clair entre les pages sur mobile
+                if (index > 0) {
+                    const divider = document.createElement('div');
+                    divider.className = "text-lfi-cyan font-black uppercase tracking-widest text-sm py-4 shrink-0 flex flex-col items-center md:hidden";
+                    divider.innerHTML = "<span class='bg-gray-800 text-white px-4 py-1 rounded-full shadow-lg border border-gray-600'>↓ Page " + (index + 1) + " ↓</span>";
+                    container.appendChild(divider);
+                }
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = "Tract LFI";
+                img.className = "max-w-full md:max-w-[45vw] h-auto max-h-[85vh] object-contain shadow-[0_0_30px_rgba(0,0,0,0.5)] border-4 border-lfi-dark shrink-0 transition-all duration-300";
+                container.appendChild(img);
+            });
+            
+            // On sauvegarde l'URL de la 1ère page pour la fonction de partage
+            container.dataset.shareUrl = urls[0];
+            
+            // Ouverture visuelle
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; // Force le recalcul pour la transition
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+            document.body.style.overflow = 'hidden'; // Empêche de scroller la page derrière
+        }
+
+        function closeTractModal() {
+            const modal = document.getElementById('tractModal');
+            const content = document.getElementById('tractModalContent');
+            
+            // Restauration du Méta Viewport pour bloquer le zoom sur le reste du site
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            if (viewportMeta) {
+                viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            }
+
+            // Fermeture visuelle
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto'; // Réactive le scroll
+                document.getElementById('tractImagesContainer').innerHTML = ''; // Nettoie la source
+            }, 300);
+        }
+
+        // --- FONCTION DE ZOOM UNIFIÉE (MOBILE + ORDI) ---
+        function toggleZoom() {
+            isZoomed = !isZoomed;
+            const imgs = document.querySelectorAll('#tractImagesContainer img');
+            const btn = document.getElementById('zoomBtn');
+            const container = document.getElementById('tractImagesContainer');
+            
+            if (isZoomed) {
+                imgs.forEach(img => {
+                    // Supprime les contraintes de taille
+                    img.classList.remove('max-w-full', 'md:max-w-[45vw]', 'max-h-[85vh]');
+                    // Agrandit (200vw = 2x la largeur de l'écran sur mobile)
+                    img.classList.add('w-[200vw]', 'md:w-[80vw]', 'max-w-none');
+                });
+                // Aligne en haut et force l'affichage en colonne pour que la 2e page soit visible en scrollant
+                container.className = 'flex flex-col gap-4 overflow-auto max-w-full max-h-[85vh] p-2 items-start rounded-sm';
+                btn.innerHTML = '🔍 Dézoomer';
+            } else {
+                imgs.forEach(img => {
+                    // Remet les contraintes
+                    img.classList.add('max-w-full', 'md:max-w-[45vw]', 'max-h-[85vh]');
+                    img.classList.remove('w-[200vw]', 'md:w-[80vw]', 'max-w-none');
+                });
+                // Recentre les images (empilé sur mobile, côte à côte sur ordi)
+                container.className = 'flex flex-col md:flex-row gap-4 overflow-auto max-w-full max-h-[85vh] p-2 items-center rounded-sm';
+                btn.innerHTML = '🔍 Zoomer';
+            }
+        }
+
+        // --- GESTION DU PINCEMENT TACTILE (PINCH-TO-ZOOM JS) ---
+        const tractContainer = document.getElementById('tractImagesContainer');
+        let initDist = 0;
+        
+        tractContainer.addEventListener('touchstart', (e) => {
+            if(e.touches.length === 2) {
+                initDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+            }
+        }, {passive: true});
+
+        tractContainer.addEventListener('touchmove', (e) => {
+            if(e.touches.length === 2 && initDist > 0) {
+                let currDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                if (currDist > initDist + 40) { // Écartement des doigts = Zoomer
+                    if(!isZoomed) toggleZoom();
+                    initDist = 0; 
+                } else if (currDist < initDist - 40) { // Rapprochement = Dézoomer
+                    if(isZoomed) toggleZoom();
+                    initDist = 0;
+                }
+            }
+        }, {passive: true});
+        
+        tractContainer.addEventListener('touchend', (e) => {
+            if(e.touches.length < 2) initDist = 0;
+        });
+
+        // --- GESTION DE LA MODALE EMAIL ---
+        function openEmailModal() {
+            const email = "franceinsoumiseindre@gmail.com";
+            
+            // Copie silencieuse dans le presse-papier
+            const dummy = document.createElement('textarea');
+            document.body.appendChild(dummy);
+            dummy.value = email;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            // Ouverture de la modale
+            const modal = document.getElementById('emailModal');
+            const content = document.getElementById('emailModalContent');
+            
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEmailModal() {
+            const modal = document.getElementById('emailModal');
+            const content = document.getElementById('emailModalContent');
+            
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // --- FONCTION DE PARTAGE DU TRACT ---
+        function shareTract() {
+            const imgUrl = document.getElementById('tractImagesContainer').dataset.shareUrl;
+            const siteUrl = window.location.href;
+            
+            // Données envoyées au système de partage natif du téléphone
+            const shareData = {
+                title: 'Tract LFI Châteauroux',
+                text: 'Découvrez ce tract de Châteauroux Populaire 2027 :',
+                url: siteUrl
+            };
+
+            const btnText = document.getElementById('shareBtnText');
+            const originalText = btnText.innerText;
+
+            // Vérifie si le navigateur (souvent mobile) supporte le partage natif (WhatsApp, SMS, etc.)
+            if (navigator.share) {
+                navigator.share(shareData).catch(console.error);
+            } else {
+                // Système de secours pour les ordinateurs : copie le lien dans le presse-papier
+                const dummy = document.createElement('textarea');
+                document.body.appendChild(dummy);
+                dummy.value = "Regardez ce tract : " + imgUrl + "\n\nRetrouvez le programme complet ici : " + siteUrl;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                
+                // Feedback visuel (sans utiliser de "popup alert" agressive)
+                btnText.innerText = "Lien copié !";
+                setTimeout(() => {
+                    btnText.innerText = originalText;
+                }, 3000);
+            }
+        }
+
+        let wealthChart = null;
+        let budgetChart = null;
+        let aidesChart = null;
+        let valeurChart = null;
+
+        let tranchesChart = null;
+        let csgChart = null;
+        let privilegesChart = null;
+
+        function initWealthChart() {
+            if (wealthChart) return;
+            const ctx = document.getElementById('wealthChart').getContext('2d');
+            wealthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['2010', '2013', '2016', '2019', '2022', '2025'],
+                    datasets: [{
+                        label: 'Patrimoine (Milliards €)',
+                        data: [210, 330, 450, 710, 1000, 1229],
+                        borderColor: '#009fe3',
+                        borderWidth: 8,
+                        pointBackgroundColor: '#1a1a1a',
+                        pointRadius: 6,
+                        fill: true,
+                        backgroundColor: 'rgba(0, 159, 227, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function initAidesChart() {
+            if (aidesChart) return;
+            const ctx = document.getElementById('aidesChart').getContext('2d');
+            aidesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['2000', '2010', '2019', '2024'],
+                    datasets: [{
+                        label: 'Aides Publiques (Mds €)',
+                        data: [65, 110, 157, 200],
+                        backgroundColor: '#e30613',
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function initValeurChart() {
+            if (valeurChart) return;
+            const ctx = document.getElementById('valeurChart').getContext('2d');
+            valeurChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1980', '1990', '2000', '2010', '2024'],
+                    datasets: [{
+                        label: 'Part des salaires (%)',
+                        data: [70, 62, 60, 60, 59],
+                        borderColor: '#1a1a1a',
+                        borderWidth: 8,
+                        pointBackgroundColor: '#e30613',
+                        pointRadius: 6,
+                        fill: false,
+                        tension: 0.2
+                    }]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 50, max: 80, grid: { color: '#eee' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function initBudgetChart() {
+            if (budgetChart) return;
+            const ctx = document.getElementById('budgetChart').getContext('2d');
+            budgetChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['2026', '2027', '2028', '2029', '2030', '2031', '2034', '2037'],
+                    datasets: [
+                        {
+                            label: 'Solde Budgétaire Net (M€)',
+                            data: [-2.7, -3.1, -1.7, 0, 0.6, 1.2, 5.6, 11.4],
+                            borderColor: '#009fe3',
+                            backgroundColor: 'rgba(0, 159, 227, 0.2)',
+                            borderWidth: 4, fill: true, tension: 0.3
+                        },
+                        {
+                            label: 'Annuité de la Dette (M€)',
+                            data: [7, 6.8, 6.6, 6.4, 6.2, 6.0, 3.0, 1.5],
+                            borderColor: '#e30613',
+                            backgroundColor: 'rgba(227, 6, 19, 0.05)',
+                            borderWidth: 4, borderDash: [10, 5], fill: false, tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: 'white' } } },
+                    scales: { y: { grid: { color: '#333' }, ticks: { color: 'white' } }, x: { grid: { color: '#333' }, ticks: { color: 'white' } } }
+                }
+            });
+        }
+
+        // Initialize Mini Charts for Tax Section
+        function initTaxCharts() {
+            if (!tranchesChart) {
+                const ctxTranches = document.getElementById('tranchesChart').getContext('2d');
+                tranchesChart = new Chart(ctxTranches, {
+                    type: 'bar',
+                    data: {
+                        labels: ['1', '2', '3', '4', '5', '...', '14'],
+                        datasets: [
+                            { label: 'Macron (5)', data: [0, 11, 30, 41, 45, null, null], backgroundColor: '#1a1a1a' },
+                            { label: 'NFP (14)', data: [0, 5, 10, 15, 20, 45, 90], backgroundColor: '#009fe3' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+                });
+            }
+            if (!csgChart) {
+                const ctxCsg = document.getElementById('csgChart').getContext('2d');
+                csgChart = new Chart(ctxCsg, {
+                    type: 'line',
+                    data: {
+                        labels: ['Faibles', 'Moyens', 'Hauts', 'Très Hauts'],
+                        datasets: [
+                            { label: 'Taux Actuel', data: [9.2, 9.2, 9.2, 9.2], borderColor: '#1a1a1a', borderDash: [5, 5], tension: 0 },
+                            { label: 'Taux NFP', data: [3, 7, 11, 15], borderColor: '#009fe3', fill: true, backgroundColor: 'rgba(0, 159, 227, 0.1)', tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+                });
+            }
+            if (!privilegesChart) {
+                const ctxPriv = document.getElementById('privilegesChart').getContext('2d');
+                privilegesChart = new Chart(ctxPriv, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Flat Tax (Perte)', 'ISF NFP (Gain)'],
+                        datasets: [{ data: [3, 15], backgroundColor: ['#1a1a1a', '#e30613'], borderRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+                });
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initTaxCharts);
+
+        const taxInput = document.getElementById('taxSalary');
+        const taxSlider = document.getElementById('taxSlider');
+        const macronDisplay = document.getElementById('macronTax');
+        const nfpDisplay = document.getElementById('nfpTax');
+        const gainTag = document.getElementById('gainTag');
+        const nfpBox = document.getElementById('nfpBox');
+        
+        function calculateTax() {
+            let salary = parseInt(taxInput.value) || 0;
+            let parts = document.querySelector('input[name="parts"]:checked').value;
+            let taxMacron = Math.max(0, (salary - 1400) * 0.12) / parts;
+            let taxNFP = 0;
+            if(salary/parts < 4000) taxNFP = taxMacron * 0.65;
+            else taxNFP = taxMacron * 1.30;
+            macronDisplay.innerText = Math.floor(taxMacron) + " €";
+            nfpDisplay.innerText = Math.floor(taxNFP) + " €";
+            let diff = Math.floor(taxMacron - taxNFP);
+            if(diff >= 0) {
+                nfpBox.className = "p-6 bg-lfi-cyan text-white text-center lfi-angle shadow-xl";
+                gainTag.innerHTML = `GAIN : ${diff * 12} € / AN`;
+                gainTag.className = "mt-4 inline-block bg-white text-lfi-cyan font-black px-3 py-1 text-sm uppercase italic";
+            } else {
+                nfpBox.className = "p-6 bg-lfi-red text-white text-center lfi-angle shadow-xl";
+                gainTag.innerHTML = `SOLIDARITÉ : +${Math.abs(diff)} € / MOIS`;
+                gainTag.className = "mt-4 inline-block bg-white text-lfi-red font-black px-3 py-1 text-sm uppercase italic";
+            }
+        }
+        taxInput.addEventListener('input', () => { taxSlider.value = taxInput.value; calculateTax(); });
+        taxSlider.addEventListener('input', () => { taxInput.value = taxSlider.value; calculateTax(); });
+        document.querySelectorAll('input[name="parts"]').forEach(radio => radio.addEventListener('change', calculateTax));
+        calculateTax();
+    </script>
+</body>
+</html>
